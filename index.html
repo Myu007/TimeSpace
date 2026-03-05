@@ -1,0 +1,1592 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="TimeSpace">
+<meta name="theme-color" content="#0f1117" id="themeColorMeta">
+<title>TimeSpace</title>
+<link rel="manifest" href="./manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;0,9..144,700;0,9..144,800;1,9..144,300;1,9..144,600&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<style>
+/* ══════════════════════════════════════════════
+   TOKENS
+══════════════════════════════════════════════ */
+:root {
+  --gold:       #f5c842;
+  --gold-soft:  #f7d56e;
+  --gold-dim:   rgba(245,200,66,.12);
+  --gold-glow:  rgba(245,200,66,.3);
+  --gold-border:rgba(245,200,66,.35);
+
+  --c0: #34d9cc; --c1: #b8a0fb; --c2: #ff8f5e;
+  --c3: #6ee88a; --c4: #ff6b7a; --c5: #52c5f5; --c6: #f5c842;
+
+  --r: 12px; --rl: 18px; --rx: 24px;
+  --ease: cubic-bezier(.4,0,.2,1);
+  --spring: cubic-bezier(.34,1.56,.64,1);
+
+  --st: env(safe-area-inset-top, 0px);
+  --sb: env(safe-area-inset-bottom, 0px);
+  --sl: env(safe-area-inset-left, 0px);
+  --sr: env(safe-area-inset-right, 0px);
+}
+
+/* DARK */
+[data-theme="dark"] {
+  --page:    #0f1117;
+  --page2:   #080a0f;
+  --s1:      #171c27;
+  --s2:      #1e2535;
+  --s3:      #252e42;
+  --s4:      #2e384f;
+  --b1:      rgba(255,255,255,.07);
+  --b2:      rgba(255,255,255,.13);
+  --b3:      rgba(255,255,255,.22);
+
+  --t1:      #f0ecff;        /* primary text — bright, clear */
+  --t2:      #c8c3db;        /* secondary */
+  --t3:      #8a85a0;        /* tertiary / labels */
+  --t4:      #4e4965;        /* very muted */
+
+  --danger:  #ff6b7a;
+  --overlay: rgba(7,9,15,.9);
+  --gm: none; /* grain mode */
+}
+
+/* LIGHT */
+[data-theme="light"] {
+  --page:    #faf7f0;
+  --page2:   #f0ece0;
+  --s1:      #ffffff;
+  --s2:      #f5f2ea;
+  --s3:      #ede9de;
+  --s4:      #e3deceFF;
+  --b1:      rgba(30,20,10,.07);
+  --b2:      rgba(30,20,10,.13);
+  --b3:      rgba(30,20,10,.22);
+
+  --t1:      #1a1520;        /* primary — deep ink */
+  --t2:      #3d3650;        /* secondary */
+  --t3:      #7a7090;        /* labels */
+  --t4:      #b0a8c0;        /* very muted */
+
+  --danger:  #d63040;
+  --overlay: rgba(180,170,155,.88);
+  --gm: none;
+}
+
+/* ══════════════════════════════════════════════
+   RESET
+══════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { height: 100%; -webkit-tap-highlight-color: transparent; scroll-behavior: smooth; }
+
+body {
+  min-height: 100%;
+  background: var(--page);
+  color: var(--t1);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+  overflow-x: hidden;
+  transition: background .3s var(--ease), color .3s var(--ease);
+  padding-bottom: calc(var(--sb) + 2rem);
+}
+
+/* subtle dot texture */
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background-image: radial-gradient(circle, var(--b1) 1px, transparent 1px);
+  background-size: 28px 28px;
+  opacity: 1;
+}
+
+/* warm ambient glow — dark only */
+[data-theme="dark"] body::after {
+  content: '';
+  position: fixed;
+  width: 700px; height: 700px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(245,200,66,.04) 0%, transparent 70%);
+  top: -200px; left: -200px;
+  pointer-events: none; z-index: 0;
+}
+
+.shell {
+  position: relative; z-index: 1;
+  max-width: 940px;
+  margin: 0 auto;
+  padding: 0 max(1.1rem, var(--sl));
+  padding-top: calc(var(--st) + .6rem);
+}
+
+/* ══════════════════════════════════════════════
+   HEADER
+══════════════════════════════════════════════ */
+header {
+  display: flex; align-items: center;
+  justify-content: space-between;
+  padding: 1.2rem 0 1.1rem;
+  gap: 1rem;
+  border-bottom: 1px solid var(--b1);
+  margin-bottom: 1.4rem;
+}
+
+.logo { display: flex; align-items: center; gap: .7rem; }
+
+.logo-gem {
+  width: 38px; height: 38px;
+  background: linear-gradient(135deg, var(--gold), #e8a820);
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 1px rgba(255,255,255,.12), 0 6px 20px var(--gold-glow);
+  position: relative; overflow: hidden;
+}
+.logo-gem::after {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 50%;
+  background: rgba(255,255,255,.18);
+  border-radius: 12px 12px 50% 50%;
+}
+.logo-gem svg { width: 19px; height: 19px; position: relative; z-index: 1; }
+
+.logo-words { display: flex; flex-direction: column; gap: 0; }
+.logo-name {
+  font-family: 'Fraunces', serif;
+  font-size: 1.35rem; font-weight: 700;
+  color: var(--t1);
+  letter-spacing: -.03em;
+  line-height: 1;
+}
+.logo-tag {
+  font-family: 'DM Mono', monospace;
+  font-size: .55rem; font-weight: 400;
+  color: var(--t3);
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+.hdr-right { display: flex; align-items: center; gap: .6rem; }
+
+.clock-wrap { text-align: right; }
+.clock-big {
+  font-family: 'DM Mono', monospace;
+  font-size: clamp(1.15rem, 4vw, 1.75rem);
+  font-weight: 500;
+  color: var(--gold);
+  letter-spacing: -.04em;
+  line-height: 1;
+}
+.clock-small {
+  font-family: 'DM Mono', monospace;
+  font-size: .6rem;
+  color: var(--t3);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  margin-top: 3px;
+}
+
+.ibtn {
+  width: 38px; height: 38px;
+  border-radius: 11px;
+  background: var(--s2);
+  border: 1px solid var(--b2);
+  color: var(--t2);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1rem;
+  transition: background .2s, border-color .2s, transform .15s;
+  flex-shrink: 0;
+}
+.ibtn:hover { background: var(--s3); border-color: var(--b3); }
+.ibtn:active { transform: scale(.92); }
+
+/* ══════════════════════════════════════════════
+   HERO STRIP
+══════════════════════════════════════════════ */
+.hero {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: .65rem;
+  margin-bottom: 1.5rem;
+}
+
+.hero-card {
+  background: var(--s1);
+  border: 1px solid var(--b1);
+  border-radius: var(--rl);
+  padding: 1rem 1.1rem;
+  position: relative; overflow: hidden;
+  transition: background .25s, border-color .25s;
+}
+.hero-card::before {
+  content: '';
+  position: absolute;
+  top: 0; right: 0;
+  width: 80px; height: 80px;
+  border-radius: 0 var(--rl) 0 80px;
+  background: var(--b1);
+  pointer-events: none;
+}
+.hero-card.gold-card {
+  background: linear-gradient(135deg, rgba(245,200,66,.15), rgba(245,200,66,.05));
+  border-color: var(--gold-border);
+}
+.hc-label {
+  font-family: 'DM Mono', monospace;
+  font-size: .58rem;
+  text-transform: uppercase;
+  letter-spacing: .14em;
+  color: var(--t3);
+  margin-bottom: .55rem;
+  font-weight: 400;
+}
+.hc-value {
+  font-family: 'Fraunces', serif;
+  font-size: clamp(1.1rem, 3.5vw, 1.8rem);
+  font-weight: 700;
+  color: var(--t1);
+  letter-spacing: -.03em;
+  line-height: 1.05;
+}
+.hc-value.gold { color: var(--gold); }
+.hc-sub {
+  font-family: 'DM Mono', monospace;
+  font-size: .6rem;
+  color: var(--t3);
+  margin-top: 4px;
+  font-weight: 400;
+  line-height: 1.4;
+}
+
+/* ══════════════════════════════════════════════
+   DAY FILTER TABS
+══════════════════════════════════════════════ */
+.day-tabs {
+  display: flex; gap: .45rem;
+  overflow-x: auto; -webkit-overflow-scrolling: touch;
+  scrollbar-width: none; padding-bottom: 2px;
+  margin-bottom: 1.1rem;
+}
+.day-tabs::-webkit-scrollbar { display: none; }
+
+.day-tab {
+  flex-shrink: 0;
+  font-family: 'DM Mono', monospace;
+  font-size: .68rem; font-weight: 500;
+  letter-spacing: .04em;
+  color: var(--t3);
+  background: var(--s2);
+  border: 1px solid var(--b1);
+  border-radius: 50px;
+  padding: .42rem .9rem;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background .18s, color .18s, border-color .18s, transform .15s;
+}
+.day-tab:active { transform: scale(.95); }
+.day-tab.active {
+  background: var(--gold);
+  border-color: var(--gold);
+  color: #0f0e0a;
+  font-weight: 600;
+}
+.day-tab.has-events {
+  color: var(--t2);
+  border-color: var(--b2);
+}
+.day-tab.past-day { opacity: .6; }
+
+/* ══════════════════════════════════════════════
+   SECTION LABEL
+══════════════════════════════════════════════ */
+.sec-row {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: .8rem;
+}
+.sec-label {
+  font-family: 'DM Mono', monospace;
+  font-size: .64rem; font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: .18em;
+  color: var(--t3);
+}
+
+/* ══════════════════════════════════════════════
+   TIMELINE
+══════════════════════════════════════════════ */
+.tl-wrap {
+  background: var(--s1);
+  border: 1px solid var(--b1);
+  border-radius: var(--rl);
+  padding: 1.2rem 1.3rem 1.9rem;
+  margin-bottom: 1.5rem;
+  position: relative; overflow: hidden;
+}
+
+/* faint grid lines */
+.tl-wrap::before {
+  content: '';
+  position: absolute; inset: 0;
+  background-image: repeating-linear-gradient(90deg, var(--b1) 0px, var(--b1) 1px, transparent 1px, transparent 60px);
+  pointer-events: none;
+  border-radius: var(--rl);
+}
+
+.ruler {
+  position: relative;
+  height: 22px;
+  margin-bottom: .6rem;
+}
+.htick {
+  position: absolute;
+  transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  font-family: 'DM Mono', monospace;
+  font-size: .58rem;
+  color: var(--t3);
+  user-select: none;
+  font-weight: 400;
+}
+.htick span { font-size: .44rem; color: var(--t4); }
+.htick-bar { width: 1px; height: 6px; background: var(--b2); }
+
+.tl-bar {
+  position: relative;
+  height: 52px;
+  background: var(--s3);
+  border-radius: 10px;
+  overflow: visible;
+  margin-bottom: 2.5rem;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,.15);
+}
+
+.seg {
+  position: absolute; top: 0; height: 100%;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+  transition: filter .2s, transform .2s;
+  cursor: default;
+}
+.seg:hover { filter: brightness(1.2); transform: scaleY(1.04); }
+.seg-stripe {
+  position: absolute; inset: 0; opacity: .08;
+  background-image: repeating-linear-gradient(-55deg, rgba(255,255,255,.6) 0px, rgba(255,255,255,.6) 2px, transparent 2px, transparent 8px);
+}
+.seg-text {
+  font-family: 'DM Mono', monospace;
+  font-size: .58rem;
+  font-weight: 500;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  padding: 0 7px;
+  position: relative; z-index: 1;
+  text-shadow: 0 1px 3px rgba(0,0,0,.3);
+}
+[data-theme="dark"]  .seg-text { color: rgba(255,255,255,.95); }
+[data-theme="light"] .seg-text { color: rgba(0,0,0,.8); }
+
+/* needle */
+.needle {
+  position: absolute; top: -11px; bottom: -11px; width: 2px;
+  background: linear-gradient(to bottom, transparent, var(--gold) 15%, var(--gold) 85%, transparent);
+  border-radius: 2px; z-index: 20; pointer-events: none;
+  transition: left .85s linear;
+  box-shadow: 0 0 0 1.5px var(--page), 0 0 16px var(--gold-glow);
+}
+.needle::before {
+  content: 'NOW';
+  position: absolute; top: -20px; left: 50%;
+  transform: translateX(-50%);
+  font-family: 'DM Mono', monospace;
+  font-size: .5rem; letter-spacing: .12em;
+  color: var(--gold);
+  white-space: nowrap;
+  font-weight: 500;
+  text-shadow: 0 0 10px var(--gold-glow);
+}
+.needle::after {
+  content: '';
+  position: absolute; bottom: -7px; left: 50%;
+  transform: translateX(-50%);
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--gold);
+  box-shadow: 0 0 12px var(--gold);
+}
+@keyframes pulse-needle {
+  0%,100% { box-shadow: 0 0 0 1.5px var(--page), 0 0 16px var(--gold-glow); }
+  50%      { box-shadow: 0 0 0 1.5px var(--page), 0 0 30px rgba(245,200,66,.55); }
+}
+.needle { animation: pulse-needle 2.5s ease-in-out infinite; }
+
+/* event pins */
+.pin {
+  position: absolute; bottom: -2.5rem;
+  transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center;
+  z-index: 10;
+}
+.pin-dot { width: 8px; height: 8px; border-radius: 50%; border: 2px solid currentColor; background: var(--page); }
+.pin-line { width: 1px; height: 10px; }
+.pin-label {
+  font-family: 'DM Mono', monospace;
+  font-size: .52rem;
+  text-align: center; white-space: nowrap;
+  margin-top: 2px;
+  font-weight: 500;
+}
+
+/* ══════════════════════════════════════════════
+   EVENTS GRID
+══════════════════════════════════════════════ */
+.events-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 188px), 1fr));
+  gap: .7rem;
+  margin-bottom: 1.3rem;
+}
+
+.ecard {
+  background: var(--s1);
+  border: 1px solid var(--b1);
+  border-radius: var(--rl);
+  padding: 1.1rem 1.1rem 1rem;
+  position: relative; overflow: hidden;
+  animation: cardRise .32s var(--ease) both;
+  transition: background .22s, border-color .22s, transform .2s, box-shadow .2s;
+  touch-action: manipulation;
+  cursor: default;
+}
+.ecard:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 28px rgba(0,0,0,.18);
+}
+.ecard:active { transform: scale(.97); }
+
+@keyframes cardRise {
+  from { opacity: 0; transform: translateY(14px) scale(.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.ecard.is-next {
+  border-color: var(--gold-border);
+  background: linear-gradient(140deg, var(--s1), var(--gold-dim));
+  box-shadow: 0 0 0 1px var(--gold-dim), inset 0 0 40px rgba(245,200,66,.03);
+}
+.ecard.is-past {
+  opacity: .38;
+  filter: grayscale(.4);
+}
+
+/* left accent stripe */
+.card-stripe {
+  position: absolute; top: 0; left: 0;
+  width: 3.5px; height: 100%;
+  border-radius: var(--rl) 0 0 var(--rl);
+}
+
+/* corner badge */
+.next-pill {
+  position: absolute; top: .6rem; right: .6rem;
+  background: var(--gold);
+  color: #0e0c00;
+  font-family: 'DM Mono', monospace;
+  font-size: .45rem; font-weight: 600;
+  letter-spacing: .1em; text-transform: uppercase;
+  padding: 2px 7px; border-radius: 50px;
+}
+
+/* date badge */
+.date-pill {
+  position: absolute; top: .6rem; right: .6rem;
+  background: var(--s3);
+  border: 1px solid var(--b2);
+  color: var(--t3);
+  font-family: 'DM Mono', monospace;
+  font-size: .45rem; font-weight: 500;
+  letter-spacing: .06em;
+  padding: 2px 6px; border-radius: 4px;
+}
+.ecard.is-next .date-pill { right: 4.5rem; }
+
+/* alarm dot */
+.alarm-dot {
+  position: absolute; bottom: .7rem; right: .7rem;
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--gold);
+  box-shadow: 0 0 8px var(--gold-glow);
+}
+
+/* card content */
+.card-emoji { font-size: 1.4rem; margin-bottom: .5rem; display: block; line-height: 1; }
+.card-name {
+  font-size: .9rem; font-weight: 600;
+  color: var(--t1);
+  margin-bottom: .12rem;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  padding-right: 1rem;
+  line-height: 1.2;
+}
+.card-when {
+  font-family: 'DM Mono', monospace;
+  font-size: .72rem; font-weight: 400;
+  color: var(--t2);
+  margin-bottom: .7rem;
+  line-height: 1.3;
+}
+.card-cd {
+  font-family: 'Fraunces', serif;
+  font-size: clamp(1.15rem, 3.8vw, 1.45rem);
+  font-weight: 700;
+  letter-spacing: -.03em;
+  line-height: 1;
+}
+.card-cd-label {
+  font-family: 'DM Mono', monospace;
+  font-size: .55rem; font-weight: 400;
+  color: var(--t3);
+  text-transform: uppercase; letter-spacing: .1em;
+  margin-top: 4px;
+}
+
+/* hover actions */
+.card-acts {
+  position: absolute; top: .5rem; right: .5rem;
+  display: flex; gap: 2px;
+  opacity: 0;
+  transition: opacity .18s;
+}
+.ecard:hover .card-acts,
+.ecard:focus-within .card-acts { opacity: 1; }
+@media (hover: none) { .card-acts { opacity: 1; } }
+
+.card-act {
+  width: 25px; height: 25px;
+  border-radius: 7px;
+  background: var(--s3);
+  border: 1px solid var(--b2);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: .72rem; color: var(--t3);
+  transition: color .15s, background .15s;
+}
+.card-act:hover { color: var(--t1); background: var(--s4); }
+.card-act.del-btn:hover { color: var(--danger); }
+.card-act.alarm-on { color: var(--gold); }
+.ecard.is-next .card-acts { right: 4.8rem; }
+
+/* ══════════════════════════════════════════════
+   EMPTY STATE
+══════════════════════════════════════════════ */
+.empty-state {
+  grid-column: 1 / -1;
+  display: flex; flex-direction: column; align-items: center;
+  padding: 3rem 1rem; gap: .7rem;
+  color: var(--t3);
+}
+.empty-state .ei { font-size: 2.5rem; opacity: .4; }
+.empty-state p {
+  font-family: 'DM Mono', monospace;
+  font-size: .72rem; text-align: center; line-height: 1.9;
+  color: var(--t3);
+}
+
+/* ══════════════════════════════════════════════
+   ADD BUTTON
+══════════════════════════════════════════════ */
+.fab-row { display: flex; justify-content: center; padding: .6rem 0 .8rem; }
+.fab {
+  display: flex; align-items: center; gap: .6rem;
+  background: var(--gold);
+  color: #0e0c00;
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 600; font-size: .88rem;
+  border: none; border-radius: 50px;
+  padding: .82rem 2rem;
+  cursor: pointer;
+  box-shadow: 0 4px 24px var(--gold-glow), 0 0 0 1px rgba(255,255,255,.1) inset;
+  transition: opacity .2s, transform .18s, box-shadow .2s;
+  touch-action: manipulation;
+  letter-spacing: .01em;
+}
+.fab:hover { opacity: .92; transform: translateY(-2px); box-shadow: 0 10px 32px var(--gold-glow); }
+.fab:active { transform: scale(.96); }
+.fab svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+/* ══════════════════════════════════════════════
+   MODAL / OVERLAY
+══════════════════════════════════════════════ */
+.overlay {
+  position: fixed; inset: 0; z-index: 1000;
+  background: var(--overlay);
+  backdrop-filter: blur(16px) saturate(1.6);
+  -webkit-backdrop-filter: blur(16px) saturate(1.6);
+  display: flex; align-items: flex-end; justify-content: center;
+  padding: .8rem;
+  padding-bottom: calc(var(--sb) + .8rem);
+  opacity: 0; pointer-events: none;
+  transition: opacity .28s var(--ease);
+}
+@media (min-height: 600px) and (min-width: 540px) {
+  .overlay { align-items: center; }
+}
+.overlay.open { opacity: 1; pointer-events: all; }
+
+.modal {
+  background: var(--s1);
+  border: 1px solid var(--b2);
+  border-radius: var(--rx);
+  padding: .2rem 1.5rem 1.8rem;
+  width: 100%; max-width: 460px;
+  max-height: 94vh; overflow-y: auto;
+  transform: translateY(40px) scale(.97);
+  transition: transform .35s var(--spring);
+  scrollbar-width: thin;
+  scrollbar-color: var(--b2) transparent;
+}
+.overlay.open .modal { transform: translateY(0) scale(1); }
+
+/* drag handle */
+.modal-handle {
+  width: 38px; height: 4px;
+  background: var(--b3);
+  border-radius: 2px;
+  margin: 1rem auto .2rem;
+}
+@media (min-width: 540px) { .modal-handle { display: none; } }
+
+.modal-header {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  margin-bottom: 1.4rem; padding-top: .8rem;
+}
+.modal-title {
+  font-family: 'Fraunces', serif;
+  font-size: 1.5rem; font-weight: 700;
+  color: var(--t1);
+  letter-spacing: -.03em;
+  line-height: 1.1;
+}
+.modal-sub {
+  font-family: 'DM Mono', monospace;
+  font-size: .62rem; color: var(--t3);
+  margin-top: 3px; font-weight: 400;
+}
+.mclose {
+  width: 30px; height: 30px; border-radius: 8px;
+  background: var(--s3); border: 1px solid var(--b2);
+  color: var(--t3); font-size: .9rem;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: background .15s, color .15s; flex-shrink: 0; margin-top: 2px;
+}
+.mclose:hover { background: var(--s4); color: var(--t1); }
+
+/* ── FORM ── */
+.field { margin-bottom: 1rem; }
+.flabel {
+  display: block;
+  font-family: 'DM Mono', monospace;
+  font-size: .6rem; font-weight: 500;
+  text-transform: uppercase; letter-spacing: .14em;
+  color: var(--t3);
+  margin-bottom: .45rem;
+}
+.finput, .fselect {
+  width: 100%;
+  background: var(--s2);
+  border: 1.5px solid var(--b2);
+  border-radius: var(--r);
+  color: var(--t1);
+  font-family: 'DM Mono', monospace;
+  font-size: .92rem;
+  padding: .72rem .95rem;
+  outline: none;
+  transition: border-color .18s, background .18s, box-shadow .18s;
+  -webkit-appearance: none; appearance: none;
+}
+.finput:focus, .fselect:focus {
+  border-color: var(--gold);
+  background: var(--s1);
+  box-shadow: 0 0 0 3px var(--gold-dim);
+}
+.finput::placeholder { color: var(--t4); }
+.fselect option { background: var(--s2); color: var(--t1); }
+
+/* date + time row */
+.dt-row { display: grid; grid-template-columns: 1fr 1fr; gap: .65rem; }
+
+/* date quick buttons */
+.date-quick {
+  display: flex; gap: .4rem; margin-top: .45rem; flex-wrap: wrap;
+}
+.dq-btn {
+  font-family: 'DM Mono', monospace;
+  font-size: .62rem; font-weight: 500;
+  color: var(--t2);
+  background: var(--s3);
+  border: 1px solid var(--b2);
+  border-radius: 50px;
+  padding: .32rem .75rem;
+  cursor: pointer;
+  transition: background .15s, border-color .15s, color .15s;
+  white-space: nowrap;
+}
+.dq-btn:hover, .dq-btn.active {
+  background: var(--gold-dim);
+  border-color: var(--gold-border);
+  color: var(--gold);
+}
+
+/* emoji picker */
+.emoji-grid {
+  display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .45rem;
+}
+.ebtn {
+  width: 38px; height: 38px;
+  border-radius: 9px;
+  background: var(--s3);
+  border: 1.5px solid transparent;
+  font-size: 1.1rem; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: border-color .15s, background .15s, transform .12s;
+}
+.ebtn:hover { background: var(--s4); transform: scale(1.1); }
+.ebtn.active { border-color: var(--gold); background: var(--gold-dim); }
+
+/* alarm toggle */
+.alarm-row {
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--s2);
+  border: 1.5px solid var(--b2);
+  border-radius: var(--r);
+  padding: .75rem 1rem;
+  margin-bottom: 1rem;
+  gap: .8rem;
+}
+.alarm-info { display: flex; flex-direction: column; gap: 2px; }
+.alarm-title { font-size: .85rem; font-weight: 600; color: var(--t1); }
+.alarm-hint { font-family: 'DM Mono', monospace; font-size: .58rem; color: var(--t3); }
+
+.tg { flex-shrink: 0; position: relative; }
+.tg input { position: absolute; opacity: 0; width: 0; height: 0; }
+.tg-track {
+  display: block; width: 46px; height: 27px;
+  background: var(--s4); border: 1.5px solid var(--b3);
+  border-radius: 14px; cursor: pointer;
+  transition: background .22s, border-color .22s; position: relative;
+}
+.tg input:checked + .tg-track { background: var(--gold); border-color: var(--gold); }
+.tg-track::after {
+  content: ''; position: absolute;
+  top: 3px; left: 3px;
+  width: 19px; height: 19px;
+  border-radius: 50%;
+  background: var(--s1);
+  box-shadow: 0 2px 6px rgba(0,0,0,.35);
+  transition: transform .24s var(--spring);
+}
+.tg input:checked + .tg-track::after { transform: translateX(18px); }
+
+/* modal cta */
+.modal-cta { display: flex; gap: .65rem; margin-top: 1.5rem; }
+.btn-go {
+  flex: 1;
+  background: linear-gradient(135deg, var(--gold), #e8a820);
+  border: none; border-radius: var(--r);
+  color: #0e0c00; font-family: 'DM Sans', sans-serif;
+  font-weight: 700; font-size: .9rem;
+  padding: .82rem; cursor: pointer;
+  box-shadow: 0 4px 16px var(--gold-glow);
+  transition: opacity .2s, transform .15s;
+  letter-spacing: .01em;
+}
+.btn-go:hover { opacity: .9; transform: translateY(-1px); }
+.btn-go:active { transform: scale(.97); }
+.btn-no {
+  background: var(--s3); border: 1.5px solid var(--b2);
+  border-radius: var(--r); color: var(--t2);
+  font-family: 'DM Sans', sans-serif; font-size: .9rem;
+  padding: .82rem 1.2rem; cursor: pointer;
+  transition: background .15s;
+}
+.btn-no:hover { background: var(--s4); }
+
+/* ══════════════════════════════════════════════
+   ALARM TOAST
+══════════════════════════════════════════════ */
+.toast {
+  position: fixed;
+  top: max(1rem, calc(var(--st) + 1rem));
+  left: 50%;
+  transform: translateX(-50%) translateY(-160px);
+  z-index: 2000;
+  background: linear-gradient(135deg, var(--gold), #e8a820);
+  color: #0e0c00;
+  border-radius: var(--rl);
+  padding: 1rem 1.3rem;
+  display: flex; align-items: center; gap: 1rem;
+  min-width: 280px; max-width: 92vw;
+  box-shadow: 0 12px 40px var(--gold-glow), 0 0 0 1px rgba(255,255,255,.2) inset;
+  transition: transform .44s var(--spring);
+}
+.toast.show { transform: translateX(-50%) translateY(0); }
+.toast-icon { font-size: 1.8rem; line-height: 1; flex-shrink: 0; }
+.toast-body { flex: 1; min-width: 0; }
+.toast-name { font-weight: 700; font-size: .95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.toast-time { font-family: 'DM Mono', monospace; font-size: .68rem; opacity: .75; margin-top: 2px; }
+.toast-dismiss {
+  background: rgba(0,0,0,.18);
+  border: none; border-radius: 8px;
+  color: #0e0c00; font-family: 'DM Sans', sans-serif;
+  font-size: .72rem; font-weight: 700;
+  padding: .38rem .75rem; cursor: pointer;
+  flex-shrink: 0; letter-spacing: .02em;
+}
+
+/* ══════════════════════════════════════════════
+   RESPONSIVE
+══════════════════════════════════════════════ */
+@media (max-width: 420px) {
+  .hero { grid-template-columns: 1fr 1fr; }
+  .hero-card:nth-child(3) { grid-column: 1 / -1; }
+  .hc-value { font-size: 1.15rem; }
+  .dt-row { grid-template-columns: 1fr; }
+  .events-grid { grid-template-columns: 1fr 1fr; }
+}
+@media (min-width: 700px) {
+  .shell { padding: 0 2rem; padding-top: calc(var(--st) + .6rem); }
+  .events-grid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (min-width: 900px) {
+  .events-grid { grid-template-columns: repeat(4, 1fr); }
+}
+</style>
+</head>
+<body>
+
+<!-- ── ALARM TOAST ── -->
+<div class="toast" id="toast">
+  <div class="toast-icon" id="tIcon">⏰</div>
+  <div class="toast-body">
+    <div class="toast-name" id="tName">Alarm</div>
+    <div class="toast-time" id="tTime">—</div>
+  </div>
+  <button class="toast-dismiss" id="tDismiss">DISMISS</button>
+</div>
+
+<div class="shell">
+
+  <!-- ── HEADER ── -->
+  <header>
+    <div class="logo">
+      <div class="logo-gem">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#0e0c00" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="9"/>
+          <polyline points="12 7 12 12 15.5 12"/>
+        </svg>
+      </div>
+      <div class="logo-words">
+        <span class="logo-name">TimeSpace</span>
+        <span class="logo-tag">day planner</span>
+      </div>
+    </div>
+    <div class="hdr-right">
+      <button class="ibtn" id="themeBtn" title="Toggle theme">🌙</button>
+      <div class="clock-wrap">
+        <div class="clock-big" id="ckd">--:--:--</div>
+        <div class="clock-small" id="ckdt">---</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ── HERO STRIP ── -->
+  <div class="hero">
+    <div class="hero-card gold-card">
+      <div class="hc-label">Free until next</div>
+      <div class="hc-value gold" id="hFree">—</div>
+      <div class="hc-sub" id="hFreeSub">no upcoming</div>
+    </div>
+    <div class="hero-card">
+      <div class="hc-label">Next event</div>
+      <div class="hc-value" id="hName" style="font-size:.95rem;font-family:'DM Sans',sans-serif;font-weight:600">—</div>
+      <div class="hc-sub" id="hTime">—</div>
+    </div>
+    <div class="hero-card">
+      <div class="hc-label">Events total</div>
+      <div class="hc-value" id="hCount">0</div>
+      <div class="hc-sub" id="hPast">0 past</div>
+    </div>
+  </div>
+
+  <!-- ── DAY TABS ── -->
+  <div class="day-tabs" id="dayTabs"></div>
+
+  <!-- ── TIMELINE ── -->
+  <div class="sec-row">
+    <span class="sec-label" id="tlLabel">Timeline · Today</span>
+  </div>
+  <div class="tl-wrap">
+    <div class="ruler" id="ruler"></div>
+    <div class="tl-bar" id="tlBar">
+      <div class="needle" id="needle"></div>
+    </div>
+  </div>
+
+  <!-- ── EVENTS ── -->
+  <div class="sec-row">
+    <span class="sec-label" id="evLabel">Events</span>
+  </div>
+  <div class="events-grid" id="evGrid">
+    <div class="empty-state">
+      <div class="ei">🕐</div>
+      <p>No events yet.<br>Tap <strong style="color:var(--t2)">Add Event</strong> to fill your day.</p>
+    </div>
+  </div>
+
+  <!-- ── FAB ── -->
+  <div class="fab-row">
+    <button class="fab" id="openModal">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+        <line x1="12" y1="5" x2="12" y2="19"/>
+        <line x1="5" y1="12" x2="19" y2="12"/>
+      </svg>
+      Add Event
+    </button>
+  </div>
+
+</div><!-- /shell -->
+
+<!-- ── MODAL ── -->
+<div class="overlay" id="overlay">
+  <div class="modal" role="dialog" aria-modal="true" aria-label="Add event">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">New Event</div>
+        <div class="modal-sub">Fill in the details below</div>
+      </div>
+      <button class="mclose" id="closeModal">✕</button>
+    </div>
+
+    <!-- Name -->
+    <div class="field">
+      <label class="flabel" for="iName">Event name</label>
+      <input class="finput" id="iName" placeholder="e.g. Class, Leave Home, Get Ready…" autocomplete="off"/>
+    </div>
+
+    <!-- Date + Time -->
+    <div class="field">
+      <label class="flabel">Date &amp; Time</label>
+      <div class="dt-row">
+        <div>
+          <input class="finput" id="iDate" type="date" style="cursor:pointer"/>
+          <div class="date-quick" id="dateQuick">
+            <button class="dq-btn" data-offset="0">Today</button>
+            <button class="dq-btn" data-offset="1">Tomorrow</button>
+            <button class="dq-btn" data-offset="2">In 2 days</button>
+          </div>
+        </div>
+        <input class="finput" id="iTime" type="time"/>
+      </div>
+    </div>
+
+    <!-- Type -->
+    <div class="field">
+      <label class="flabel" for="iType">Type</label>
+      <select class="fselect" id="iType">
+        <option value="0">🎓 Class / Destination</option>
+        <option value="1">🚪 Leave Home</option>
+        <option value="2">🚌 Travel / Transit</option>
+        <option value="3">🪥 Get Ready / Prep</option>
+        <option value="4">⚠️ Deadline / Alert</option>
+        <option value="5">🎯 Task / Work</option>
+        <option value="6">⭐ Other</option>
+      </select>
+    </div>
+
+    <!-- Emoji -->
+    <div class="field">
+      <label class="flabel">Icon</label>
+      <div class="emoji-grid" id="emojiGrid">
+        <button class="ebtn active" data-e="🎓">🎓</button>
+        <button class="ebtn" data-e="🚪">🚪</button>
+        <button class="ebtn" data-e="🚌">🚌</button>
+        <button class="ebtn" data-e="🪥">🪥</button>
+        <button class="ebtn" data-e="⚠️">⚠️</button>
+        <button class="ebtn" data-e="🎯">🎯</button>
+        <button class="ebtn" data-e="🏃">🏃</button>
+        <button class="ebtn" data-e="☕">☕</button>
+        <button class="ebtn" data-e="📚">📚</button>
+        <button class="ebtn" data-e="🏥">🏥</button>
+        <button class="ebtn" data-e="⭐">⭐</button>
+        <button class="ebtn" data-e="🕐">🕐</button>
+        <button class="ebtn" data-e="🛌">🛌</button>
+        <button class="ebtn" data-e="🍽️">🍽️</button>
+        <button class="ebtn" data-e="💊">💊</button>
+        <button class="ebtn" data-e="🏋️">🏋️</button>
+      </div>
+    </div>
+
+    <!-- Alarm -->
+    <div class="alarm-row">
+      <div class="alarm-info">
+        <span class="alarm-title">⏰ Set an alarm</span>
+        <span class="alarm-hint">Rings + vibrates at event time</span>
+      </div>
+      <label class="tg">
+        <input type="checkbox" id="iAlarm">
+        <span class="tg-track"></span>
+      </label>
+    </div>
+
+    <div class="modal-cta">
+      <button class="btn-no" id="cancelBtn">Cancel</button>
+      <button class="btn-go" id="saveBtn">Add to Timeline →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ──────────────────────────────────────────
+   CONFIG
+────────────────────────────────────────── */
+const COLORS = ['#34d9cc','#b8a0fb','#ff8f5e','#6ee88a','#ff6b7a','#52c5f5','#f5c842'];
+const TYPE_EMOJIS = ['🎓','🚪','🚌','🪥','⚠️','🎯','⭐'];
+const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+/* ──────────────────────────────────────────
+   STATE
+────────────────────────────────────────── */
+let events   = JSON.parse(localStorage.getItem('ts_ev3') || '[]');
+let selEmoji = '🎓';
+let fired    = new Set();
+let actx     = null;
+let viewDate = todayStr(); // YYYY-MM-DD of the currently shown day
+
+/* ──────────────────────────────────────────
+   PERSIST
+────────────────────────────────────────── */
+const save = () => localStorage.setItem('ts_ev3', JSON.stringify(events));
+
+/* ──────────────────────────────────────────
+   DATE HELPERS
+────────────────────────────────────────── */
+function todayStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function offsetDate(n) {
+  const d = new Date(); d.setDate(d.getDate() + n);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function prettyDate(dateStr) {
+  const today = todayStr();
+  const tmr   = offsetDate(1);
+  if (dateStr === today) return 'Today';
+  if (dateStr === tmr)   return 'Tomorrow';
+  const d = new Date(dateStr + 'T00:00:00');
+  return `${DAYS[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()]}`;
+}
+
+function shortDate(dateStr) {
+  const today = todayStr();
+  const tmr   = offsetDate(1);
+  if (dateStr === today) return 'Today';
+  if (dateStr === tmr)   return 'Tmr';
+  const d = new Date(dateStr + 'T00:00:00');
+  return `${d.getDate()} ${MONTHS[d.getMonth()]}`;
+}
+
+function parseDatetime(dateStr, timeStr) {
+  return new Date(`${dateStr}T${timeStr}:00`);
+}
+
+function fmtCountdown(ms) {
+  if (ms <= 0) return 'Now';
+  const s = Math.floor(ms / 1000);
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sc = s % 60;
+  if (h >= 24) { const d = Math.floor(h/24); return `${d}d ${h%24}h`; }
+  if (h >= 1)  return `${h}h ${m}m`;
+  if (m >= 1)  return `${m}m ${sc}s`;
+  return `${sc}s`;
+}
+
+function fmtAMPM(timeStr) {
+  const [h, m] = timeStr.split(':').map(Number);
+  return `${h % 12 || 12}:${String(m).padStart(2,'0')} ${h >= 12 ? 'PM' : 'AM'}`;
+}
+
+/* ──────────────────────────────────────────
+   THEME
+────────────────────────────────────────── */
+function applyTheme(t) {
+  document.documentElement.setAttribute('data-theme', t);
+  document.getElementById('themeBtn').textContent = t === 'dark' ? '☀️' : '🌙';
+  document.getElementById('themeColorMeta').content = t === 'dark' ? '#0f1117' : '#faf7f0';
+  localStorage.setItem('ts_theme3', t);
+}
+{
+  const s = localStorage.getItem('ts_theme3') ||
+    (window.matchMedia('(prefers-color-scheme:light)').matches ? 'light' : 'dark');
+  applyTheme(s);
+}
+document.getElementById('themeBtn').addEventListener('click', () => {
+  applyTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+});
+
+/* ──────────────────────────────────────────
+   CLOCK
+────────────────────────────────────────── */
+function tickClock() {
+  const d = new Date();
+  document.getElementById('ckd').textContent =
+    d.toLocaleTimeString('en-US', {hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
+  document.getElementById('ckdt').textContent =
+    d.toLocaleDateString('en-US', {weekday:'short',month:'short',day:'numeric'}).toUpperCase();
+}
+
+/* ──────────────────────────────────────────
+   DAY TABS
+────────────────────────────────────────── */
+function buildDayTabs() {
+  const container = document.getElementById('dayTabs');
+  const today = todayStr();
+
+  // collect all unique dates from events + today
+  const dateSet = new Set([today]);
+  events.forEach(e => dateSet.add(e.date));
+  const dates = Array.from(dateSet).sort();
+
+  // also always show tomorrow
+  const tmr = offsetDate(1);
+  if (!dateSet.has(tmr)) dates.push(tmr);
+  dates.sort();
+
+  container.innerHTML = '';
+  dates.forEach(ds => {
+    const tab = document.createElement('button');
+    tab.className = 'day-tab';
+    const hasEv = events.some(e => e.date === ds);
+    const isPast = ds < today;
+    if (hasEv) tab.classList.add('has-events');
+    if (isPast) tab.classList.add('past-day');
+    if (ds === viewDate) tab.classList.add('active');
+    tab.textContent = prettyDate(ds);
+    tab.addEventListener('click', () => { viewDate = ds; renderAll(); });
+    container.appendChild(tab);
+  });
+}
+
+/* ──────────────────────────────────────────
+   TIMELINE (for viewDate)
+────────────────────────────────────────── */
+function minsOf(timeStr) {
+  const [h,m] = timeStr.split(':').map(Number);
+  return h*60+m;
+}
+
+function getRange(dayEvents) {
+  const today = todayStr();
+  const isToday = viewDate === today;
+  const nm = isToday ? (new Date().getHours()*60 + new Date().getMinutes() + new Date().getSeconds()/60) : null;
+
+  if (!dayEvents.length) {
+    const base = nm || 8*60;
+    return { start: Math.max(0, base - 60), end: base + 7*60 };
+  }
+  const evMins = dayEvents.map(e => minsOf(e.time));
+  const allMins = nm ? [...evMins, nm] : evMins;
+  return {
+    start: Math.max(0, Math.min(...allMins) - 60),
+    end:   Math.min(24*60, Math.max(...allMins) + 90)
+  };
+}
+
+function renderTimeline(dayEvents) {
+  const bar    = document.getElementById('tlBar');
+  const ruler  = document.getElementById('ruler');
+  const needle = document.getElementById('needle');
+
+  // clear except needle
+  Array.from(bar.children).forEach(c => { if (!c.classList.contains('needle')) bar.removeChild(c); });
+  ruler.innerHTML = '';
+
+  const today   = todayStr();
+  const isToday = viewDate === today;
+  const { start, end } = getRange(dayEvents);
+  const span = end - start;
+
+  document.getElementById('tlLabel').textContent = `Timeline · ${prettyDate(viewDate)}`;
+
+  // hour ticks
+  for (let h = Math.ceil(start / 60); h <= Math.floor(end / 60); h++) {
+    const pct = ((h * 60 - start) / span) * 100;
+    if (pct < 0 || pct > 100) continue;
+    const tick = document.createElement('div');
+    tick.className = 'htick';
+    tick.style.left = pct + '%';
+    const ap = h >= 12 ? 'PM' : 'AM';
+    tick.innerHTML = `${h%12||12}<span>${ap}</span><div class="htick-bar"></div>`;
+    ruler.appendChild(tick);
+  }
+
+  // needle (today only)
+  if (isToday) {
+    const nm = new Date().getHours()*60 + new Date().getMinutes() + new Date().getSeconds()/60;
+    needle.style.left  = Math.min(100, Math.max(0, ((nm - start) / span) * 100)) + '%';
+    needle.style.display = '';
+  } else {
+    needle.style.display = 'none';
+  }
+
+  // segments + pins
+  const sorted = [...dayEvents].sort((a,b) => a.time.localeCompare(b.time));
+  sorted.forEach((ev, i) => {
+    const evMin = minsOf(ev.time);
+    const pct   = ((evMin - start) / span) * 100;
+    const prevMin = i === 0 ? start : minsOf(sorted[i-1].time);
+    const segStart = Math.max(start, prevMin);
+    const segEnd   = evMin;
+
+    if (segEnd > segStart) {
+      const color = COLORS[ev.colorIdx % COLORS.length];
+      const seg = document.createElement('div');
+      seg.className = 'seg';
+      seg.style.left       = ((segStart - start) / span) * 100 + '%';
+      seg.style.width      = ((segEnd - segStart) / span) * 100 + '%';
+      seg.style.background = color + '28';
+      seg.style.borderLeft = `2px solid ${color}70`;
+
+      const stripe = document.createElement('div'); stripe.className = 'seg-stripe'; seg.appendChild(stripe);
+
+      const durM = segEnd - segStart;
+      const durH = Math.floor(durM / 60);
+      const txt  = document.createElement('div'); txt.className = 'seg-text'; txt.style.color = color;
+      txt.textContent = durH > 0 ? `${durH}h${durM%60>0?` ${durM%60}m`:''}` : `${durM}m`;
+      seg.appendChild(txt);
+      bar.insertBefore(seg, needle);
+    }
+
+    if (pct >= -1 && pct <= 101) {
+      const color = COLORS[ev.colorIdx % COLORS.length];
+      const cp    = Math.min(96, Math.max(4, pct));
+      const pin   = document.createElement('div'); pin.className = 'pin'; pin.style.left = cp + '%';
+      pin.innerHTML = `
+        <div class="pin-dot" style="color:${color};border-color:${color}"></div>
+        <div class="pin-line" style="background:${color}55"></div>
+        <div class="pin-label" style="color:${color}">${fmtAMPM(ev.time)}<br>${ev.emoji}</div>`;
+      bar.appendChild(pin);
+    }
+  });
+}
+
+/* ──────────────────────────────────────────
+   EVENT CARDS
+────────────────────────────────────────── */
+function renderCards(dayEvents) {
+  const grid = document.getElementById('evGrid');
+  grid.innerHTML = '';
+
+  const today  = todayStr();
+  const now    = new Date();
+  const sorted = [...dayEvents].sort((a,b) => a.time.localeCompare(b.time));
+  let nextEv   = null;
+
+  document.getElementById('evLabel').textContent = `Events · ${prettyDate(viewDate)} (${sorted.length})`;
+
+  if (!sorted.length) {
+    grid.innerHTML = `<div class="empty-state">
+      <div class="ei">${viewDate >= today ? '🕐' : '📅'}</div>
+      <p>${viewDate >= today ? 'No events for this day.<br>Tap <strong style="color:var(--t2)">Add Event</strong> to add one.' : 'No events recorded for this day.'}</p>
+    </div>`;
+    return;
+  }
+
+  sorted.forEach((ev, i) => {
+    const dt     = parseDatetime(ev.date, ev.time);
+    const ms     = dt - now;
+    const isPast = ms < 0;
+    const isNext = !isPast && !nextEv && ev.date >= today;
+    if (isNext) nextEv = ev;
+
+    const color = COLORS[ev.colorIdx % COLORS.length];
+    const card  = document.createElement('div');
+    card.className = 'ecard' + (isPast ? ' is-past' : '') + (isNext ? ' is-next' : '');
+    card.style.animationDelay = (i * 0.05) + 's';
+
+    const showDateBadge = ev.date !== today;
+
+    card.innerHTML = `
+      <div class="card-stripe" style="background:${color}"></div>
+      ${isNext ? '<div class="next-pill">NEXT</div>' : ''}
+      ${showDateBadge ? `<div class="date-pill" style="${isNext?'right:4.8rem':''}">${shortDate(ev.date)}</div>` : ''}
+      <div class="card-acts">
+        <button class="card-act ${ev.alarm ? 'alarm-on' : ''}" data-id="${ev.id}" data-act="alarm" title="Toggle alarm">${ev.alarm ? '🔔' : '🔕'}</button>
+        <button class="card-act del-btn" data-id="${ev.id}" data-act="del" title="Delete">✕</button>
+      </div>
+      ${ev.alarm ? '<div class="alarm-dot"></div>' : ''}
+      <span class="card-emoji">${ev.emoji}</span>
+      <div class="card-name">${ev.name}</div>
+      <div class="card-when">${fmtAMPM(ev.time)}</div>
+      <div class="card-cd" style="color:${isPast ? 'var(--t3)' : color}" id="cd-${ev.id}">
+        ${isPast ? '—' : fmtCountdown(ms)}
+      </div>
+      <div class="card-cd-label">${isPast ? 'passed' : 'remaining'}</div>`;
+
+    grid.appendChild(card);
+  });
+
+  // button handlers
+  grid.querySelectorAll('[data-act]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const { id, act } = btn.dataset;
+      if (act === 'del') { events = events.filter(ev => ev.id !== id); save(); renderAll(); }
+      else if (act === 'alarm') {
+        const ev = events.find(ev => ev.id === id);
+        if (ev) { ev.alarm = !ev.alarm; if (ev.alarm) reqNotif(); save(); renderAll(); }
+      }
+    });
+  });
+
+  return nextEv;
+}
+
+/* ──────────────────────────────────────────
+   HERO SUMMARY (global next event)
+────────────────────────────────────────── */
+function updateHero() {
+  const now = new Date();
+  const allFuture = events
+    .filter(e => parseDatetime(e.date, e.time) > now)
+    .sort((a,b) => {
+      const da = parseDatetime(a.date, a.time);
+      const db = parseDatetime(b.date, b.time);
+      return da - db;
+    });
+
+  const nextEv = allFuture[0] || null;
+  const pastC  = events.filter(e => parseDatetime(e.date, e.time) < now).length;
+
+  document.getElementById('hCount').textContent = events.length;
+  document.getElementById('hPast').textContent  = `${pastC} past`;
+
+  if (!nextEv) {
+    document.getElementById('hFree').textContent    = '∞';
+    document.getElementById('hFreeSub').textContent = 'no upcoming events';
+    document.getElementById('hName').textContent    = '—';
+    document.getElementById('hTime').textContent    = '—';
+    return;
+  }
+
+  const ms = parseDatetime(nextEv.date, nextEv.time) - now;
+  document.getElementById('hFree').textContent    = fmtCountdown(ms);
+  document.getElementById('hFreeSub').textContent = `until ${nextEv.emoji} ${nextEv.name}`;
+  document.getElementById('hName').textContent    = nextEv.emoji + ' ' + nextEv.name;
+  document.getElementById('hTime').textContent    = `${prettyDate(nextEv.date)} · ${fmtAMPM(nextEv.time)}`;
+}
+
+/* ──────────────────────────────────────────
+   RENDER ALL
+────────────────────────────────────────── */
+function renderAll() {
+  const dayEvents = events.filter(e => e.date === viewDate);
+  buildDayTabs();
+  renderTimeline(dayEvents);
+  renderCards(dayEvents);
+  updateHero();
+}
+
+/* ──────────────────────────────────────────
+   TICK (1s)
+────────────────────────────────────────── */
+function tick() {
+  tickClock();
+  checkAlarms();
+  updateHero();
+
+  const now = new Date();
+  events.forEach(ev => {
+    const el = document.getElementById('cd-' + ev.id);
+    if (!el) return;
+    const ms = parseDatetime(ev.date, ev.time) - now;
+    el.textContent = ms < 0 ? '—' : fmtCountdown(ms);
+  });
+
+  // update needle
+  const today = todayStr();
+  if (viewDate === today) {
+    const { start, end } = getRange(events.filter(e => e.date === today));
+    const span = end - start;
+    const nm   = now.getHours()*60 + now.getMinutes() + now.getSeconds()/60;
+    const n    = document.getElementById('needle');
+    if (n) n.style.left = Math.min(100, Math.max(0, ((nm - start) / span) * 100)) + '%';
+  }
+}
+
+/* ──────────────────────────────────────────
+   ALARMS
+────────────────────────────────────────── */
+function checkAlarms() {
+  const d = new Date();
+  const today = todayStr();
+  const hhmm  = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+  if (d.getHours() === 0 && d.getMinutes() === 0) fired.clear();
+  events.forEach(ev => {
+    if (ev.alarm && ev.date === today && ev.time === hhmm && !fired.has(ev.id) && d.getSeconds() < 30) {
+      fired.add(ev.id);
+      showToast(ev);
+    }
+  });
+}
+
+function showToast(ev) {
+  document.getElementById('tIcon').textContent = ev.emoji;
+  document.getElementById('tName').textContent = ev.name;
+  document.getElementById('tTime').textContent = `Starts at ${fmtAMPM(ev.time)}`;
+  document.getElementById('toast').classList.add('show');
+  playAlarm();
+  if (Notification.permission === 'granted') {
+    try { new Notification(`⏰ ${ev.emoji} ${ev.name}`, { body: `Starting at ${fmtAMPM(ev.time)}` }); } catch(e) {}
+  }
+  setTimeout(() => document.getElementById('toast').classList.remove('show'), 28000);
+}
+document.getElementById('tDismiss').addEventListener('click', () =>
+  document.getElementById('toast').classList.remove('show')
+);
+
+function playAlarm() {
+  try {
+    if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+    const ctx = actx;
+    [[523.25,0],[659.25,.22],[783.99,.44],[1046.5,.66],[523.25,1.05],[659.25,1.27],[783.99,1.49],[1046.5,1.71]].forEach(([f,dt]) => {
+      const o = ctx.createOscillator(), g = ctx.createGain(), t = ctx.currentTime + dt;
+      o.type = 'sine'; o.frequency.value = f;
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(.3, t + .04);
+      g.gain.exponentialRampToValueAtTime(.001, t + .5);
+      o.connect(g); g.connect(ctx.destination);
+      o.start(t); o.stop(t + .55);
+    });
+  } catch(e) {}
+  if (navigator.vibrate) navigator.vibrate([200,80,200,80,400]);
+}
+
+function reqNotif() {
+  if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission();
+}
+
+/* ──────────────────────────────────────────
+   MODAL
+────────────────────────────────────────── */
+const overlay = document.getElementById('overlay');
+const openModal  = () => { overlay.classList.add('open'); document.getElementById('iName').focus(); };
+const closeModal = () => overlay.classList.remove('open');
+
+document.getElementById('openModal').addEventListener('click', openModal);
+document.getElementById('closeModal').addEventListener('click', closeModal);
+document.getElementById('cancelBtn').addEventListener('click', closeModal);
+overlay.addEventListener('click', e => { if (e.target === overlay) closeModal(); });
+
+// Date quick buttons
+document.getElementById('dateQuick').addEventListener('click', e => {
+  const btn = e.target.closest('.dq-btn');
+  if (!btn) return;
+  const offset = parseInt(btn.dataset.offset);
+  document.getElementById('iDate').value = offsetDate(offset);
+  document.querySelectorAll('.dq-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+});
+
+// Keep quick buttons in sync with manual date picker
+document.getElementById('iDate').addEventListener('change', function() {
+  const val = this.value;
+  document.querySelectorAll('.dq-btn').forEach((b, i) => {
+    b.classList.toggle('active', val === offsetDate(parseInt(b.dataset.offset)));
+  });
+});
+
+// Emoji picker
+document.getElementById('emojiGrid').addEventListener('click', e => {
+  const b = e.target.closest('.ebtn');
+  if (!b) return;
+  document.querySelectorAll('.ebtn').forEach(x => x.classList.remove('active'));
+  b.classList.add('active');
+  selEmoji = b.dataset.e;
+});
+
+// Type → emoji sync
+document.getElementById('iType').addEventListener('change', function() {
+  const em = TYPE_EMOJIS[parseInt(this.value)] || '⭐';
+  selEmoji = em;
+  document.querySelectorAll('.ebtn').forEach(b => b.classList.toggle('active', b.dataset.e === em));
+});
+
+// Save
+document.getElementById('saveBtn').addEventListener('click', () => {
+  const name     = document.getElementById('iName').value.trim();
+  const date     = document.getElementById('iDate').value;
+  const time     = document.getElementById('iTime').value;
+  const colorIdx = parseInt(document.getElementById('iType').value) || 0;
+  const alarm    = document.getElementById('iAlarm').checked;
+  if (!name || !date || !time) { document.getElementById('iName').focus(); return; }
+
+  events.push({ id: Date.now().toString(), name, date, time, emoji: selEmoji, colorIdx, alarm });
+  if (alarm) reqNotif();
+  save();
+
+  // switch view to the newly added event's date
+  viewDate = date;
+  renderAll();
+
+  document.getElementById('iName').value  = '';
+  document.getElementById('iAlarm').checked = false;
+  closeModal();
+});
+
+document.getElementById('iName').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('saveBtn').click();
+});
+
+/* ──────────────────────────────────────────
+   DEFAULT FORM VALUES
+────────────────────────────────────────── */
+function setDefaultFormValues() {
+  const d = new Date(Date.now() + 60 * 60000);
+  document.getElementById('iDate').value = offsetDate(0);
+  document.getElementById('iTime').value =
+    `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+  // mark Today as active
+  document.querySelectorAll('.dq-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.offset === '0');
+  });
+}
+
+/* ──────────────────────────────────────────
+   SERVICE WORKER
+────────────────────────────────────────── */
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {});
+
+/* ──────────────────────────────────────────
+   INIT
+────────────────────────────────────────── */
+setDefaultFormValues();
+renderAll();
+tickClock();
+setInterval(tick, 1000);
+setInterval(renderAll, 60000);
+</script>
+</body>
+</html>
